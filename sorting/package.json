@@ -1,0 +1,11 @@
+{
+  "name": "sorting",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "sorting utilities",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "",
+  "license": "ISC"
+}
