@@ -1,15 +1,15 @@
 {
   "name": "sorting",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "type": "module",
   "description": "sorting utilities",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "rdf": "node ./test/rdf/rdf.js"
   },
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "fast-check": "^3.3.0",
-    "mocha": "^10.1.0"
+    "mocha": "^10.1.0",
+    "rdf-utils-fs": "^2.3.0"
   }
 }

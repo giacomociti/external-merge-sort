@@ -1,6 +1,12 @@
-import os from 'os'
-import fs from 'fs'
-import path from 'path'
+const getIterator = iterable => {
+  if (iterable[Symbol.iterator]) {
+    return iterable[Symbol.iterator]()
+  }
+  if (iterable[Symbol.asyncIterator]) {
+    return iterable[Symbol.asyncIterator]()
+  }
+  throw new Error(`${iterable} is not iterable`)
+}
 
 export const compareOn = key => (x, y) => {
   const k1 = key(x)
@@ -15,83 +21,9 @@ export const compareOn = key => (x, y) => {
   return 0
 }
 
-const getIterator = iterable => {
-  if (iterable[Symbol.iterator]) {
-    return iterable[Symbol.iterator]()
-  }
-  if (iterable[Symbol.asyncIterator]) {
-    return iterable[Symbol.asyncIterator]()
-  }
-  throw new Error(`${iterable} is not iterable`)
-}
-
-async function * mergeFiles (files, comparer) {
-  const advance = async it => {
-    it.curr = await it.next()
-  }
-  // todo use a sorted collection
-  const add = x => {
-    if (x.curr.done) {
-      return
-    }
-    for (const i in sortedIterators) {
-      if (comparer(x.curr.value, sortedIterators[i].curr.value) < 0) {
-        sortedIterators.splice(i, 0, x)
-        return
-      }
-    }
-    sortedIterators.push(x)
-  }
-  console.log('merging')
-  const iterators = files.map(getIterator)
-  for (const it of iterators) {
-    await advance(it)
-  }
-  const sortedIterators = []
-  iterators.forEach(add)
-
-  while (sortedIterators.length > 0) {
-    const it = sortedIterators.shift()
-    yield it.curr.value
-    await advance(it)
-    add(it)
-  }
-}
-
-export const createTempFolder = (extension, write) => {
-  let temp
-  const init = async () => {
-    const base = `${path.join(os.tmpdir(), 'external-sort')}${path.sep}`
-    if (!fs.existsSync(base)) {
-      fs.mkdirSync(base)
-    }
-    temp = fs.mkdtempSync(base)
-    console.log(`created ${temp}`)
-  }
-
-  let i = 0
-  return {
-    dispose: async () => {
-      if (temp) {
-        fs.rmSync(temp, { recursive: true })
-        console.log(`deleted ${temp}`)
-      }
-    },
-    write: async (chunk) => {
-      if (!temp) {
-        await init()
-      }
-      const filename = path.join(temp, `temp${++i}${extension}`)
-      const iterable = await write(chunk, filename)
-      console.log('created ' + filename)
-      return iterable
-    }
-  }
-}
-
-export async function * chunkBySize (maxSize, iterator) {
+export async function * chunkBySize (maxSize, iterable) {
   let chunk = []
-  for await (const item of iterator) {
+  for await (const item of iterable) {
     chunk.push(item)
     if (chunk.length === maxSize) {
       yield chunk
@@ -103,34 +35,75 @@ export async function * chunkBySize (maxSize, iterator) {
   }
 }
 
+// consider using a specific data structure
+const getSortedCollection = (items, comparer) => {
+  const sortedItems = items.sort(comparer)
+  return {
+    isEmpty: () => sortedItems.length === 0,
+    shift: () => sortedItems.shift(),
+    add: x => {
+      for (const i in sortedItems) {
+        if (comparer(x, sortedItems[i]) < 0) {
+          sortedItems.splice(i, 0, x)
+          return
+        }
+      }
+      sortedItems.push(x)
+    }
+  }
+}
 
+export async function * merge (iterables, comparer) {
+  const advance = async it => {
+    it.curr = await it.next()
+  }
+ 
+  const iterators = iterables.map(getIterator)
+  for (const it of iterators) {
+    await advance(it)
+  }
+  const nonEmptyIterators = iterators.filter(x => !x.curr.done)
+  const iteratorComparer = (x, y) => comparer(x.curr.value, y.curr.value)
+  const sortedIterators = getSortedCollection(nonEmptyIterators, iteratorComparer)
+
+  while (!sortedIterators.isEmpty()) {
+    const it = sortedIterators.shift()
+    yield it.curr.value
+    await advance(it)
+    if (!it.curr.done) {
+      sortedIterators.add(it)
+    }
+  }
+}
+
+export const defaultStore = {
+  write: async chunk => chunk,
+  dispose: async () => {}
+}
 
 const defaultOptions = {
   maxSize: 1000000,
   comparer: compareOn(x => x),
-  extension: '.txt',
-  write: x => x
+  store: defaultStore
 }
 
-export async function * sort (iterator, { maxSize, comparer, extension, write } = defaultOptions) {
-  const store = createTempFolder(extension, write)
-  const files = []
-
+export async function * sort (iterable, { maxSize, comparer, store } = defaultOptions) {
+  const chunks = []
   try {
-    for await (const chunk of chunkBySize(maxSize, iterator)) {
+    for await (const chunk of chunkBySize(maxSize, iterable)) {
       chunk.sort(comparer)
       if (chunk.length < maxSize) {
-        files.push(chunk)
+        chunks.push(chunk)
       }
       else {
-        files.push(await store.write(chunk))
+        chunks.push(await store.write(chunk))
       }
     }
-    if (files.length === 1) {
-      yield * files[0]
+    if (chunks.length === 1) {
+      yield * chunks[0]
     }
     else {
-      yield * mergeFiles(files, comparer)
+      yield * merge(chunks, comparer)
     }
   }
   finally {
