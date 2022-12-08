@@ -5,7 +5,8 @@
   "description": "sorting utilities",
   "scripts": {
     "test": "mocha",
-    "rdf": "node ./test/rdf/rdf.js"
+    "rdf": "node ./test/rdf/rdf.js",
+    "txt": "node ./test/txt/txt.js"
   },
   "devDependencies": {
     "fast-check": "^3.3.0",
