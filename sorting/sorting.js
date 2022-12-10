@@ -39,9 +39,9 @@ export async function * chunkBySize (maxSize, iterable) {
 const getSortedCollection = (items, comparer) => {
   const sortedItems = items.sort(comparer)
   return {
-    isEmpty: () => sortedItems.length === 0,
-    shift: () => sortedItems.shift(),
-    add: x => {
+    empty: () => sortedItems.length === 0,
+    pop: () => sortedItems.shift(),
+    push: x => {
       for (const i in sortedItems) {
         if (comparer(x, sortedItems[i]) < 0) {
           sortedItems.splice(i, 0, x)
@@ -66,12 +66,12 @@ export async function * merge (iterables, comparer) {
   const iteratorComparer = (x, y) => comparer(x.curr.value, y.curr.value)
   const sortedIterators = getSortedCollection(nonEmptyIterators, iteratorComparer)
 
-  while (!sortedIterators.isEmpty()) {
-    const it = sortedIterators.shift()
+  while (!sortedIterators.empty()) {
+    const it = sortedIterators.pop()
     yield it.curr.value
     await advance(it)
     if (!it.curr.done) {
-      sortedIterators.add(it)
+      sortedIterators.push(it)
     }
   }
 }
