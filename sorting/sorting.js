@@ -1,3 +1,5 @@
+import Heap from 'heap'
+
 const getIterator = iterable => {
   if (iterable[Symbol.iterator]) {
     return iterable[Symbol.iterator]()
@@ -35,22 +37,12 @@ export async function * chunkBySize (maxSize, iterable) {
   }
 }
 
-// consider using a specific data structure
 const getSortedCollection = (items, comparer) => {
-  const sortedItems = items.sort(comparer)
-  return {
-    empty: () => sortedItems.length === 0,
-    pop: () => sortedItems.shift(),
-    push: x => {
-      for (const i in sortedItems) {
-        if (comparer(x, sortedItems[i]) < 0) {
-          sortedItems.splice(i, 0, x)
-          return
-        }
-      }
-      sortedItems.push(x)
-    }
+  const heap = new Heap(comparer)
+  for (const item of items) {
+    heap.push(item)
   }
+  return heap
 }
 
 export async function * merge (iterables, comparer) {
