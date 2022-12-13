@@ -68,34 +68,56 @@ export async function * merge (iterables, comparer) {
   }
 }
 
+async function * getSortedChunks (iterable, { maxSize, comparer, store }) {
+  for await (const chunk of chunkBySize(maxSize, iterable)) {
+    chunk.sort(comparer)
+    if (chunk.length === maxSize) {
+      yield await store.write(chunk)
+    }
+    else { // keep the last chunk in memory
+      yield chunk
+    }
+  }
+}
+
+// additional pass performed only in the (unlikely) case of too many temp files
+async function aggregateChunks (chunks, { maxFiles, comparer, store }) {
+  const aggregated = []
+  for await (const chunk of chunkBySize(maxFiles, chunks)) {
+    const merged = merge(chunk, comparer)
+    if (chunk.length !== maxFiles && aggregated.length === 0) {
+      // no need for additional pass
+      aggregated.push(Promise.resolve(merged))
+    }
+    else {
+      aggregated.push(store.write(merged))
+    }
+  }
+  return aggregated
+}
+
+// keeps chunks in memory, not useful in practice (except as a test double)
 export const defaultStore = {
   write: async chunk => chunk,
   dispose: async () => {}
 }
 
-const defaultOptions = {
+export const defaultOptions = {
   maxSize: 1000000,
   comparer: compareOn(x => x),
   store: defaultStore
 }
 
-export async function * sort (iterable, { maxSize, comparer, store } = defaultOptions) {
-  const chunks = []
+export async function * sort (iterable, { maxSize, maxFiles, comparer, store } = defaultOptions) {
   try {
-    for await (const chunk of chunkBySize(maxSize, iterable)) {
-      chunk.sort(comparer)
-      if (chunk.length < maxSize) {
-        chunks.push(chunk)
-      }
-      else {
-        chunks.push(await store.write(chunk))
-      }
-    }
-    if (chunks.length === 1) {
-      yield * chunks[0]
+    const sortedChunks = getSortedChunks(iterable, { maxSize, comparer, store })
+    const biggerChunks = aggregateChunks(sortedChunks, { maxFiles, comparer, store })
+    const iterables = await Promise.all(await biggerChunks)
+    if (iterables.length === 1) {
+      yield * iterables[0]
     }
     else {
-      yield * merge(chunks, comparer)
+      yield * merge(iterables, comparer)
     }
   }
   finally {
