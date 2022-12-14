@@ -39,31 +39,29 @@ export async function * chunkBySize (maxSize, iterable) {
 
 const getSortedCollection = (items, comparer) => {
   const heap = new Heap(comparer)
-  for (const item of items) {
-    heap.push(item)
-  }
+  items.forEach(x => heap.push(x))
   return heap
 }
 
 export async function * merge (iterables, comparer) {
-  const advance = async it => {
-    it.curr = await it.next()
+  const advance = async iterator => {
+    iterator.current = await iterator.next()
   }
  
   const iterators = iterables.map(getIterator)
-  for (const it of iterators) {
-    await advance(it)
+  for (const iterator of iterators) {
+    await advance(iterator)
   }
-  const nonEmptyIterators = iterators.filter(x => !x.curr.done)
-  const iteratorComparer = (x, y) => comparer(x.curr.value, y.curr.value)
+  const nonEmptyIterators = iterators.filter(x => !x.current.done)
+  const iteratorComparer = (x, y) => comparer(x.current.value, y.current.value)
   const sortedIterators = getSortedCollection(nonEmptyIterators, iteratorComparer)
 
   while (!sortedIterators.empty()) {
-    const it = sortedIterators.pop()
-    yield it.curr.value
-    await advance(it)
-    if (!it.curr.done) {
-      sortedIterators.push(it)
+    const iterator = sortedIterators.pop()
+    yield iterator.current.value
+    await advance(iterator)
+    if (!iterator.current.done) {
+      sortedIterators.push(iterator)
     }
   }
 }
@@ -84,7 +82,7 @@ async function * getSortedChunks (iterable, { maxSize, comparer, store }) {
 async function aggregateChunks (chunks, { maxFiles, comparer, store }) {
   const aggregated = []
   for await (const chunk of chunkBySize(maxFiles, chunks)) {
-    const merged = merge(chunk, comparer)
+    const merged = chunk.length === 1 ? chunk[0] : merge(chunk, comparer)
     if (chunk.length !== maxFiles && aggregated.length === 0) {
       // no need for additional pass
       aggregated.push(Promise.resolve(merged))
