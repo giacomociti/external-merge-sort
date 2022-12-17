@@ -1,7 +1,8 @@
 {
   "name": "external-merge-sort",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
+  "main": "index.js",
   "description": "Sorting algorithm using external memory if the input iterable is too big",
   "scripts": {
     "test": "mocha"
