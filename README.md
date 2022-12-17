@@ -20,7 +20,7 @@ the simple usage above is not that useful in practice: the iterable input normal
 - *maxSize*:
     the size of chunks in which to split the input
 - *maxFiles*:
-    threshold for the additional pass (usually not needed)
+    threshold to trigger an additional pass (usually not needed)
 - *comparer*:
     a custom comparison function
 - *store*:
