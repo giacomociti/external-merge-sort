@@ -1,12 +1,10 @@
 {
-  "name": "sorting",
+  "name": "external-merge-sort",
   "version": "0.0.0",
   "type": "module",
-  "description": "sorting utilities",
+  "description": "Sorting algorithm using external memory if the input iterable is too big",
   "scripts": {
-    "test": "mocha",
-    "rdf": "node ./test/rdf/rdf.js",
-    "txt": "node ./test/txt/txt.js"
+    "test": "mocha"
   },
   "devDependencies": {
     "fast-check": "^3.3.0",

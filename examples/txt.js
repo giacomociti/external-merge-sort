@@ -1,6 +1,6 @@
 import readline from 'readline'
-import { sort, compareOn } from '../../sorting.js'
-import { createStore } from '../../storage.js'
+import { sort, compareOn } from '../sorting.js'
+import { createStore } from '../storage.js'
 import { finished } from 'stream'
 import fs from 'fs'
 import { promisify } from 'util'

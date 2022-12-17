@@ -26,7 +26,7 @@ the simple usage above is not that useful in practice: the iterable input normal
 - *store*:
     an object capable to `write` chunks to temporary storage, returning an iterable over stored items
 
-See [txt.js](./test/txt/txt.js) and [rdf.js](./test/rdf/rdf.js) for two examples.
+See [txt.js](./examples/txt.js) and [rdf.js](./examples/rdf.js) for two examples.
 
 
 

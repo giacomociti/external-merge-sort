@@ -79,14 +79,8 @@ const sortProperty = async x => {
 }
 
 const sortPropertyWithSize = async (x, maxSize, maxFiles) => {
-  const store = spyStore()
   const expected = x.sort()
-  const actual = sort(x, {
-    maxSize,
-    maxFiles,
-    comparer: compareOn(id),
-    store
-  })
+  const actual = sort(x, { maxSize, maxFiles, comparer, store: defaultStore })
 
   assert.deepEqual(await toArray(actual), expected)
 }

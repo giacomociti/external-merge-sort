@@ -1,6 +1,6 @@
 import rdfUtils from 'rdf-utils-fs'
-import { sort, compareOn } from '../../sorting.js'
-import { createStore } from '../../storage.js'
+import { sort, compareOn } from '../sorting.js'
+import { createStore } from '../storage.js'
 import { Readable } from 'stream'
 
 const log = msg => console.log(`${new Date()} ${msg}`)
