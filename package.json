@@ -1,11 +1,25 @@
 {
   "name": "external-merge-sort",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "Sorting algorithm using external memory if the input iterable is too big",
   "scripts": {
     "test": "mocha"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/giacomociti/external-merge-sort.git"
+  },
+  "keywords": [
+    "external sorting",
+    "merge sort"
+  ],
+  "author": "Giacomo Citi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/giacomociti/external-merge-sort/issues"
+  },
+  "homepage": "https://github.com/giacomociti/external-merge-sort",
   "devDependencies": {
     "fast-check": "^3.3.0",
     "mocha": "^10.1.0",
