@@ -83,12 +83,11 @@ async function aggregateChunks (chunks, { maxFiles, comparer, store }) {
   const aggregated = []
   for await (const chunk of chunkBySize(maxFiles, chunks)) {
     const merged = chunk.length === 1 ? chunk[0] : merge(chunk, comparer)
-    if (chunk.length !== maxFiles && aggregated.length === 0) {
-      // no need for additional pass
-      aggregated.push(Promise.resolve(merged))
-    }
-    else {
+    if (chunk.length === maxFiles || aggregated.length > 0) {
       aggregated.push(store.write(merged))
+    }
+    else { // no need for additional pass
+      aggregated.push(Promise.resolve(merged))
     }
   }
   return aggregated
@@ -111,12 +110,8 @@ export async function * sort (iterable, { maxSize, maxFiles, comparer, store } =
     const sortedChunks = getSortedChunks(iterable, { maxSize, comparer, store })
     const biggerChunks = aggregateChunks(sortedChunks, { maxFiles, comparer, store })
     const iterables = await Promise.all(await biggerChunks)
-    if (iterables.length === 1) {
-      yield * iterables[0]
-    }
-    else {
-      yield * merge(iterables, comparer)
-    }
+    const merged = iterables.length === 1 ? iterables[0] : merge(iterables, comparer)
+    yield * merged
   }
   finally {
     await store.dispose()

@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 const createTempDir = () => {
-  const base = `${path.join(os.tmpdir(), 'external-sort')}${path.sep}`
+  const base = `${path.join(os.tmpdir(), 'external-merge-sort')}${path.sep}`
   if (!fs.existsSync(base)) {
     fs.mkdirSync(base)
   }
