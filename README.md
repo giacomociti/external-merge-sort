@@ -1,4 +1,7 @@
 # External Merge Sort
+
+![NPM Version](https://img.shields.io/npm/v/external-merge-sort.svg?style=flat)
+
 Implementation of [external merge sort](https://en.wikipedia.org/wiki/External_sorting) based on async generators.
 The `sort` function takes an iterable and returns an async generator yielding the input values sorted.
 It relies on a `merge` function which can also be useful on its own, in case you want to merge two or more iterables already sorted.
