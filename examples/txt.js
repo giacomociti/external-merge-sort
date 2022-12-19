@@ -32,7 +32,7 @@ const sortTxt = async () => {
     maxSize: 1000000,
     maxFiles: 1000,
     comparer: compareOn(x => x), 
-    store: createStore(write, '.txt')})
+    store: createStore(write)})
   await writeLines(sorted, './temp/sorted.txt')
 }
 

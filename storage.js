@@ -10,7 +10,7 @@ const createTempDir = () => {
   return fs.mkdtempSync(base)
 }
 
-export const createStore = (write, extension) => {
+export const createStore = (write, extension = '') => {
   let temp
   let i = 0
   return {
