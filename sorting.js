@@ -49,9 +49,7 @@ export async function * merge (iterables, comparer) {
   }
  
   const iterators = iterables.map(getIterator)
-  for (const iterator of iterators) {
-    await advance(iterator)
-  }
+  await Promise.all(iterators.map(advance))
   const nonEmptyIterators = iterators.filter(x => !x.current.done)
   const iteratorComparer = (x, y) => comparer(x.current.value, y.current.value)
   const sortedIterators = getSortedCollection(nonEmptyIterators, iteratorComparer)
