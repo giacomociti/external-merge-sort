@@ -5,7 +5,8 @@
   "main": "index.js",
   "description": "Sorting algorithm using external memory if the input iterable is too big",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "coverage": "c8 mocha"
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
   },
   "homepage": "https://github.com/giacomociti/external-merge-sort",
   "devDependencies": {
+    "c8": "^7.12.0",
     "fast-check": "^3.3.0",
     "mocha": "^10.1.0",
     "rdf-utils-fs": "^2.3.0",

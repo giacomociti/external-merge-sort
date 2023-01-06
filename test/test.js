@@ -3,14 +3,7 @@ import * as assert from 'assert'
 import * as fc from 'fast-check'
 import { sort, merge, compareOn, chunkBySize, defaultStore } from '../sorting.js'
 import { isDeepStrictEqual } from 'util'
-
-const toArray = async iterable => {
-  const result = []
-  for await (const item of iterable) {
-    result.push(item)
-  }
-  return result
-}
+import { toArray } from './utils.js'
 
 const id = x => x
 
