@@ -23,7 +23,7 @@ export const createStore = (write, extension = '') => {
     },
     dispose: async () => {
       if (temp) {
-        fs.rmSync(temp, { recursive: true })
+        fs.rmSync(temp, { recursive: true, force: true })
       }
     }
   }
