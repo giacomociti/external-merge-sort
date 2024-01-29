@@ -23,7 +23,12 @@ export const createStore = (write, extension = '') => {
     },
     dispose: async () => {
       if (temp) {
-        fs.rmSync(temp, { recursive: true, force: true })
+        try {
+          fs.rmSync(temp, { recursive: true, force: true })
+        }
+        catch {
+          // softfail if rmdir fails
+        }
       }
     }
   }
