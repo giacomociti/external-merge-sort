@@ -1,6 +1,7 @@
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
+import type { AnyIterable } from './index.js'
 
 const createTempDir = () => {
   const base = `${path.join(os.tmpdir(), 'external-merge-sort')}${path.sep}`
@@ -10,11 +11,13 @@ const createTempDir = () => {
   return fs.mkdtempSync(base)
 }
 
-export const createStore = (write, extension = '') => {
-  let temp
+export type Write<T> = (chunk: AnyIterable<T>, filename: string) => Promise<AnyIterable<T>>
+
+export const createStore = <T>(write: Write<T>, extension = '') => {
+  let temp: string | undefined
   let i = 0
   return {
-    write: chunk => {
+    write: (chunk: AnyIterable<T>) => {
       if (!temp) {
         temp = createTempDir()
       }

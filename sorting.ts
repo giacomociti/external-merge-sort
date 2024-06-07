@@ -1,18 +1,25 @@
 import Heap from 'heap'
+import type { AnyIterable, Store } from './index.js'
 
-const getIterator = iterable => {
-  if (iterable[Symbol.iterator]) {
+type StatefulIterator<T> = (Iterator<T> | AsyncIterator<T>) & { current?: IteratorResult<T, T> }
+
+const getIterator = <T>(iterable: AnyIterable<T>): StatefulIterator<T> => {
+  if (Symbol.iterator in iterable) {
     return iterable[Symbol.iterator]()
   }
-  if (iterable[Symbol.asyncIterator]) {
+  if (Symbol.asyncIterator in iterable) {
     return iterable[Symbol.asyncIterator]()
   }
   throw new Error(`${iterable} is not iterable`)
 }
 
-export const compareOn = key => (x, y) => {
-  const k1 = key(x)
-  const k2 = key(y)
+interface Comparer<T> {
+  (x: T, y: T): number
+}
+
+export const compareOn: <T>(key: (arg: T) => unknown) => Comparer<T> = key => (x, y) => {
+  const k1: any = key(x)
+  const k2: any = key(y)
 
   if (k1 < k2) {
     return -1
@@ -23,7 +30,7 @@ export const compareOn = key => (x, y) => {
   return 0
 }
 
-export async function * chunkBySize (maxSize, iterable) {
+export async function * chunkBySize<T> (maxSize: number | undefined, iterable: AnyIterable<T>): AsyncGenerator<Array<T>> {
   let chunk = []
   for await (const item of iterable) {
     chunk.push(item)
@@ -37,34 +44,35 @@ export async function * chunkBySize (maxSize, iterable) {
   }
 }
 
-const getSortedCollection = (items, comparer) => {
+const getSortedCollection = <T>(items: T[], comparer: Comparer<T>) => {
   const heap = new Heap(comparer)
   items.forEach(x => heap.push(x))
   return heap
 }
 
-export async function * merge (iterables, comparer) {
-  const advance = async iterator => {
+export async function * merge<T> (iterables: Array<AnyIterable<T>>, comparer: Comparer<T>) {
+  const advance = async (iterator: StatefulIterator<T>) => {
     iterator.current = await iterator.next()
   }
- 
+
   const iterators = iterables.map(getIterator)
   await Promise.all(iterators.map(advance))
-  const nonEmptyIterators = iterators.filter(x => !x.current.done)
-  const iteratorComparer = (x, y) => comparer(x.current.value, y.current.value)
+  const nonEmptyIterators = iterators.filter(x => !x.current!.done)
+  const iteratorComparer = (x: StatefulIterator<T>, y: StatefulIterator<T>) => comparer(x.current!.value, y.current!.value)
   const sortedIterators = getSortedCollection(nonEmptyIterators, iteratorComparer)
 
   while (!sortedIterators.empty()) {
-    const iterator = sortedIterators.pop()
-    yield iterator.current.value
+    const iterator = sortedIterators.pop()!
+
+    yield iterator.current!.value
     await advance(iterator)
-    if (!iterator.current.done) {
+    if (!iterator.current!.done) {
       sortedIterators.push(iterator)
     }
   }
 }
 
-async function * getSortedChunks (iterable, { maxSize, comparer, store }) {
+async function * getSortedChunks <T> (iterable: AnyIterable<T>, { maxSize, comparer, store }: Options<T>) {
   for await (const chunk of chunkBySize(maxSize, iterable)) {
     chunk.sort(comparer)
     if (chunk.length === maxSize) {
@@ -77,7 +85,7 @@ async function * getSortedChunks (iterable, { maxSize, comparer, store }) {
 }
 
 // additional pass performed only in the (unlikely) case of too many temp files
-async function aggregateChunks (chunks, { maxFiles, comparer, store }) {
+async function aggregateChunks <T>(chunks: AnyIterable<AnyIterable<T>>, { maxFiles, comparer, store }: Omit<Options<T>, 'maxSize'>) {
   const aggregated = []
   for await (const chunk of chunkBySize(maxFiles, chunks)) {
     const merged = chunk.length === 1 ? chunk[0] : merge(chunk, comparer)
@@ -92,18 +100,27 @@ async function aggregateChunks (chunks, { maxFiles, comparer, store }) {
 }
 
 // keeps chunks in memory, not useful in practice (except as a test double)
-export const defaultStore = {
-  write: async chunk => chunk,
+export const defaultStore = <T>() => ({
+  write: async (chunk: AnyIterable<T>) => chunk,
   dispose: async () => {}
+})
+
+interface Options<T = unknown> {
+  maxSize: number
+  maxFiles?: number
+  comparer: Comparer<T>
+  store: Store<T>
 }
 
-export const defaultOptions = {
+export const defaultOptions = <T>() => ({
   maxSize: 1000000,
   comparer: compareOn(x => x),
-  store: defaultStore
-}
+  store: defaultStore<T>(),
+  maxFiles: undefined
+})
 
-export async function * sort (iterable, { maxSize, maxFiles, comparer, store } = defaultOptions) {
+export async function * sort<T> (iterable: Iterable<T>, options?: Options<T>) : AsyncGenerator<T> {
+  const { maxSize, maxFiles, comparer, store } = options?? defaultOptions<T>()
   try {
     const sortedChunks = getSortedChunks(iterable, { maxSize, comparer, store })
     const biggerChunks = aggregateChunks(sortedChunks, { maxFiles, comparer, store })
