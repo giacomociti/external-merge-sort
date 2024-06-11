@@ -119,7 +119,7 @@ export const defaultOptions = <T>() => ({
   maxFiles: undefined
 })
 
-export async function * sort<T> (iterable: Iterable<T>, options?: Options<T>) : AsyncGenerator<T> {
+export async function * sort<T> (iterable: Iterable<T>, options?: Options<T>) {
   const { maxSize, maxFiles, comparer, store } = options?? defaultOptions<T>()
   try {
     const sortedChunks = getSortedChunks(iterable, { maxSize, comparer, store })
