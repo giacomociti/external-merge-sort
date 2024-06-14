@@ -3,6 +3,7 @@
     "noImplicitAny": true,
     "declaration": true,
     "strict": true,
+    "strictNullChecks": true,
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
