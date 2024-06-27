@@ -73,7 +73,7 @@ const sortProperty = async x => {
 
 const sortPropertyWithSize = async (x, maxSize, maxFiles) => {
   const expected = x.sort()
-  const actual = sort(x, { maxSize, maxFiles, comparer, store: defaultStore })
+  const actual = sort(x, { maxSize, maxFiles, comparer, store: defaultStore() })
 
   assert.deepEqual(await toArray(actual), expected)
 }
@@ -119,11 +119,11 @@ describe('sort examples', async function () {
     assert.deepEqual(await toArray(actual), [1,2,3])
   })
   it('two chunks', async function () {
-    const actual = sort([3,1,2], { maxSize:2, comparer, store: defaultStore })
+    const actual = sort([3,1,2], { maxSize:2, comparer, store: defaultStore() })
     assert.deepEqual(await toArray(actual), [1,2,3])
   })
   it('custom comparer', async function () {
-    const actual = sort(['short', 'very long', 'medium'], { maxSize:2, comparer: compareOn(x => x.length), store: defaultStore })
+    const actual = sort(['short', 'very long', 'medium'], { maxSize:2, comparer: compareOn(x => x.length), store: defaultStore() })
     assert.deepEqual(await toArray(actual), ['short', 'medium', 'very long'])
   })
 })
@@ -152,7 +152,7 @@ describe('sort storage', async function () {
   it('aggregates chunks if too many', async function () {
     const store = spyStore()
     const input = [7,4,1,9,8,3,2,6,5]
-  
+
     const sorted = sort(input, {maxSize: 2, maxFiles: 3, comparer, store})
     await toArray(sorted)
 
