@@ -8,7 +8,7 @@
     "test": "mocha",
     "coverage": "c8 mocha",
     "prepack": "tsc",
-    "release": "changesets version"
+    "release": "changeset publish"
   },
   "files": [
     "*.js",
