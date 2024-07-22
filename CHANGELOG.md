@@ -1,5 +1,11 @@
 # external-merge-sort
 
+## 0.1.6
+
+### Patch Changes
+
+- ca4265b: little refactoring
+
 ## 0.1.5
 
 ### Patch Changes
