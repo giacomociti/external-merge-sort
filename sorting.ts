@@ -1,14 +1,18 @@
 import Heap from 'heap'
 import type { AnyIterable, Store } from './index.js'
 
-type StatefulIterator<T> = (Iterator<T> | AsyncIterator<T>) & { current?: IteratorResult<T, T> }
+type StatefulIterator<T> = { current: IteratorResult<T>, advance: () => Promise<void> }
 
-const getIterator = <T>(iterable: AnyIterable<T>): StatefulIterator<T> => {
+const getIterator = async <T>(iterable: AnyIterable<T>): Promise<StatefulIterator<T>> => {
   if (Symbol.iterator in iterable) {
-    return iterable[Symbol.iterator]()
+    const iterator = iterable[Symbol.iterator]()
+    const result = { current: iterator.next(), advance: async () => { result.current = iterator.next() } }
+    return result
   }
   if (Symbol.asyncIterator in iterable) {
-    return iterable[Symbol.asyncIterator]()
+    const asyncIterator = iterable[Symbol.asyncIterator]()
+    const result = { current: await asyncIterator.next(), advance: async () => { result.current = await asyncIterator.next() } }
+    return result
   }
   throw new Error(`${iterable} is not iterable`)
 }
@@ -51,22 +55,17 @@ const getSortedCollection = <T>(items: T[], comparer: Comparer<T>) => {
 }
 
 export async function * merge<T> (iterables: Array<AnyIterable<T>>, comparer: Comparer<T>) {
-  const advance = async (iterator: StatefulIterator<T>) => {
-    iterator.current = await iterator.next()
-  }
-
-  const iterators = iterables.map(getIterator)
-  await Promise.all(iterators.map(advance))
-  const nonEmptyIterators = iterators.filter(x => !x.current!.done)
-  const iteratorComparer = (x: StatefulIterator<T>, y: StatefulIterator<T>) => comparer(x.current!.value, y.current!.value)
+  const iterators = await Promise.all(iterables.map(getIterator))
+  const nonEmptyIterators = iterators.filter(x => !x.current.done)
+  const iteratorComparer: Comparer<StatefulIterator<T>> = (x, y) => comparer(x.current.value, y.current.value)
   const sortedIterators = getSortedCollection(nonEmptyIterators, iteratorComparer)
 
   while (!sortedIterators.empty()) {
     const iterator = sortedIterators.pop()!
 
-    yield iterator.current!.value
-    await advance(iterator)
-    if (!iterator.current!.done) {
+    yield iterator.current.value
+    await iterator.advance()
+    if (!iterator.current.done) {
       sortedIterators.push(iterator)
     }
   }
